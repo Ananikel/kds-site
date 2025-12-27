@@ -886,15 +886,31 @@ function SmartAssistant({ lang = "fr" }) {
   const [msgs, setMsgs] = React.useState([{ role: "assistant", content: UI.demoReply }]);
 
   const send = async () => {
-    const value = text.trim();
-    if (!value) return;
-    setMsgs((m) => [...m, { role: "user", content: value }]);
-    setText("");
+  const value = text.trim()
+  if (!value) return
 
-    setTimeout(() => {
-      setMsgs((m) => [...m, { role: "assistant", content: UI.demoReply }]);
-    }, 450);
-  };
+  setMsgs((m) => [...m, { role: "user", content: value }])
+  setText("")
+
+  try {
+    const r = await fetch("/api/chat", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ message: value, lang })
+    })
+
+    if (!r.ok) {
+      const t = await r.text()
+      setMsgs((m) => [...m, { role: "assistant", content: "Erreur API. Réessaie dans un instant." }])
+      return
+    }
+
+    const data = await r.json()
+    setMsgs((m) => [...m, { role: "assistant", content: data.reply || "OK" }])
+  } catch (e) {
+    setMsgs((m) => [...m, { role: "assistant", content: "Connexion impossible. Vérifie le backend." }])
+  }
+}
 
   return (
     <div className="fixed bottom-5 right-5 z-50">
